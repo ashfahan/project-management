@@ -99,3 +99,14 @@
   border-width: 0;
 }
 
+/* Ensure task cards are always clickable */
+.task-card-wrapper {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
+}
+
+.task-card-wrapper > * {
+  pointer-events: auto;
+}
+

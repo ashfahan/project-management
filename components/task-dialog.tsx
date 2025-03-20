@@ -15,20 +15,10 @@ import type { Project, Task } from "@/types/project"
 import { format } from "date-fns"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
-import { CalendarIcon, Trash2 } from "lucide-react"
+import { CalendarIcon, Trash2, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 import { TASK_STATUSES, TASK_PRIORITIES } from "@/constants/app-constants"
+import { useToast } from "@/hooks/use-toast"
 
 interface TaskDialogProps {
   open: boolean
@@ -39,6 +29,7 @@ interface TaskDialogProps {
 
 export default function TaskDialog({ open, onOpenChange, project, task }: TaskDialogProps) {
   const { updateProject } = useProjects()
+  const { toast } = useToast()
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [status, setStatus] = useState(TASK_STATUSES.TODO)
@@ -47,6 +38,8 @@ export default function TaskDialog({ open, onOpenChange, project, task }: TaskDi
   const [assigneeId, setAssigneeId] = useState<string | undefined>(undefined)
   const [errors, setErrors] = useState<{ title?: string; dueDate?: string }>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   useEffect(() => {
     if (task) {
@@ -59,7 +52,7 @@ export default function TaskDialog({ open, onOpenChange, project, task }: TaskDi
     } else {
       resetForm()
     }
-  }, [task, open])
+  }, [task])
 
   const validateForm = () => {
     const newErrors: { title?: string; dueDate?: string } = {}
@@ -92,59 +85,103 @@ export default function TaskDialog({ open, onOpenChange, project, task }: TaskDi
         ? project.teamMembers.find((member) => member.id === assigneeId)
         : undefined
 
-    if (task) {
-      // Update existing task
-      const updatedTask: Task = {
-        ...task,
-        title,
-        description,
-        status,
-        priority,
-        dueDate: dueDate?.toISOString(),
-        assignee,
-        updatedAt: new Date().toISOString(),
+    try {
+      if (task) {
+        // Update existing task
+        const updatedTask: Task = {
+          ...task,
+          title,
+          description,
+          status,
+          priority,
+          dueDate: dueDate?.toISOString(),
+          assignee,
+          updatedAt: new Date().toISOString(),
+        }
+
+        const updatedTasks = project.tasks.map((t) => (t.id === task.id ? updatedTask : t))
+
+        updateProject({
+          ...project,
+          tasks: updatedTasks,
+        })
+
+        toast({
+          title: "Task updated",
+          description: "The task has been updated successfully.",
+        })
+      } else {
+        // Create new task
+        const newTask: Task = {
+          id: uuidv4(),
+          title,
+          description,
+          status,
+          priority,
+          dueDate: dueDate?.toISOString(),
+          assignee,
+          createdAt: new Date().toISOString(),
+        }
+
+        updateProject({
+          ...project,
+          tasks: [...project.tasks, newTask],
+        })
+
+        toast({
+          title: "Task created",
+          description: "The task has been created successfully.",
+        })
       }
 
-      const updatedTasks = project.tasks.map((t) => (t.id === task.id ? updatedTask : t))
-
-      updateProject({
-        ...project,
-        tasks: updatedTasks,
+      onOpenChange(false)
+    } catch (error) {
+      console.error("Error saving task:", error)
+      toast({
+        title: "Error",
+        description: "Failed to save the task. Please try again.",
+        variant: "destructive",
       })
-    } else {
-      // Create new task
-      const newTask: Task = {
-        id: uuidv4(),
-        title,
-        description,
-        status,
-        priority,
-        dueDate: dueDate?.toISOString(),
-        assignee,
-        createdAt: new Date().toISOString(),
-      }
-
-      updateProject({
-        ...project,
-        tasks: [...project.tasks, newTask],
-      })
+    } finally {
+      setIsSubmitting(false)
     }
-
-    setIsSubmitting(false)
-    onOpenChange(false)
   }
 
   const handleDeleteTask = () => {
     if (!task) return
 
-    const updatedTasks = project.tasks.filter((t) => t.id !== task.id)
+    setIsDeleting(true)
 
-    updateProject({
-      ...project,
-      tasks: updatedTasks,
-    })
+    try {
+      // Create a new array without the task to be deleted
+      const updatedTasks = project.tasks.filter((t) => t.id !== task.id)
 
-    onOpenChange(false)
+      // Create a new project object with the updated tasks
+      const updatedProject = {
+        ...project,
+        tasks: updatedTasks,
+      }
+
+      // Update the project
+      updateProject(updatedProject)
+
+      toast({
+        title: "Task deleted",
+        description: "The task has been deleted successfully.",
+      })
+
+      // Close the dialog
+      onOpenChange(false)
+    } catch (error) {
+      console.error("Error deleting task:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete the task. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   const resetForm = () => {
@@ -157,180 +194,185 @@ export default function TaskDialog({ open, onOpenChange, project, task }: TaskDi
     setErrors({})
   }
 
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      resetForm()
+    }
+    onOpenChange(newOpen)
+  }
+
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(newOpen) => {
-        if (!newOpen) {
-          resetForm()
-        }
-        onOpenChange(newOpen)
-      }}
-    >
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>{task ? "Edit Task" : "Create New Task"}</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title" className={errors.title ? "text-destructive" : ""}>
-              Task Title
-              <span className="text-destructive"> *</span>
-            </Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => {
-                setTitle(e.target.value)
-                if (errors.title) {
-                  setErrors({ ...errors, title: undefined })
-                }
-              }}
-              placeholder="Enter task title"
-              className={errors.title ? "border-destructive" : ""}
-              aria-invalid={errors.title ? "true" : "false"}
-              aria-describedby={errors.title ? "title-error" : undefined}
-            />
-            {errors.title && (
-              <p id="title-error" className="text-sm text-destructive">
-                {errors.title}
-              </p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter task description"
-              rows={3}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+    <>
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>{task ? "Edit Task" : "Create New Task"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger id="status">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={TASK_STATUSES.TODO}>To Do</SelectItem>
-                  <SelectItem value={TASK_STATUSES.IN_PROGRESS}>In Progress</SelectItem>
-                  <SelectItem value={TASK_STATUSES.REVIEW}>Review</SelectItem>
-                  <SelectItem value={TASK_STATUSES.DONE}>Done</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Select value={priority} onValueChange={setPriority}>
-                <SelectTrigger id="priority">
-                  <SelectValue placeholder="Select priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={TASK_PRIORITIES.LOW}>Low</SelectItem>
-                  <SelectItem value={TASK_PRIORITIES.MEDIUM}>Medium</SelectItem>
-                  <SelectItem value={TASK_PRIORITIES.HIGH}>High</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="dueDate" className={errors.dueDate ? "text-destructive" : ""}>
-                Due Date
+              <Label htmlFor="title" className={errors.title ? "text-destructive" : ""}>
+                Task Title
+                <span className="text-destructive"> *</span>
               </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    id="dueDate"
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !dueDate && "text-muted-foreground",
-                      errors.dueDate && "border-destructive text-destructive",
-                    )}
-                    aria-label={dueDate ? `Due date: ${format(dueDate, "PPP")}` : "Select due date"}
-                    aria-invalid={errors.dueDate ? "true" : "false"}
-                    aria-describedby={errors.dueDate ? "dueDate-error" : undefined}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {dueDate ? format(dueDate, "PPP") : "Select date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={dueDate}
-                    onSelect={(date) => {
-                      setDueDate(date)
-                      if (errors.dueDate) {
-                        setErrors({ ...errors, dueDate: undefined })
-                      }
-                    }}
-                    initialFocus
-                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                  />
-                </PopoverContent>
-              </Popover>
-              {errors.dueDate && (
-                <p id="dueDate-error" className="text-sm text-destructive">
-                  {errors.dueDate}
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value)
+                  if (errors.title) {
+                    setErrors({ ...errors, title: undefined })
+                  }
+                }}
+                placeholder="Enter task title"
+                className={errors.title ? "border-destructive" : ""}
+                aria-invalid={errors.title ? "true" : "false"}
+                aria-describedby={errors.title ? "title-error" : undefined}
+              />
+              {errors.title && (
+                <p id="title-error" className="text-sm text-destructive">
+                  {errors.title}
                 </p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="assignee">Assignee</Label>
-              <Select value={assigneeId} onValueChange={setAssigneeId}>
-                <SelectTrigger id="assignee">
-                  <SelectValue placeholder="Assign to" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
-                  {project.teamMembers.map((member) => (
-                    <SelectItem key={member.id} value={member.id}>
-                      {member.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter task description"
+                rows={3}
+              />
             </div>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            {task && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button type="button" variant="destructive" className="mr-auto">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                    <span className="sr-only">Delete task</span>
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete the task.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteTask}>Delete</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (task ? "Updating..." : "Creating...") : task ? "Update" : "Create"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger id="status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={TASK_STATUSES.TODO}>To Do</SelectItem>
+                    <SelectItem value={TASK_STATUSES.IN_PROGRESS}>In Progress</SelectItem>
+                    <SelectItem value={TASK_STATUSES.REVIEW}>Review</SelectItem>
+                    <SelectItem value={TASK_STATUSES.DONE}>Done</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="priority">Priority</Label>
+                <Select value={priority} onValueChange={setPriority}>
+                  <SelectTrigger id="priority">
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={TASK_PRIORITIES.LOW}>Low</SelectItem>
+                    <SelectItem value={TASK_PRIORITIES.MEDIUM}>Medium</SelectItem>
+                    <SelectItem value={TASK_PRIORITIES.HIGH}>High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="dueDate" className={errors.dueDate ? "text-destructive" : ""}>
+                  Due Date
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="dueDate"
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dueDate && "text-muted-foreground",
+                        errors.dueDate && "border-destructive text-destructive",
+                      )}
+                      aria-label={dueDate ? `Due date: ${format(dueDate, "PPP")}` : "Select due date"}
+                      aria-invalid={errors.dueDate ? "true" : "false"}
+                      aria-describedby={errors.dueDate ? "dueDate-error" : undefined}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dueDate ? format(dueDate, "PPP") : "Select date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dueDate}
+                      onSelect={(date) => {
+                        setDueDate(date)
+                        if (errors.dueDate) {
+                          setErrors({ ...errors, dueDate: undefined })
+                        }
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                {errors.dueDate && (
+                  <p id="dueDate-error" className="text-sm text-destructive">
+                    {errors.dueDate}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="assignee">Assignee</Label>
+                <Select value={assigneeId} onValueChange={setAssigneeId}>
+                  <SelectTrigger id="assignee">
+                    <SelectValue placeholder="Assign to" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
+                    {project.teamMembers.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        {member.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              {task && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="mr-auto"
+                  disabled={isDeleting}
+                  onClick={handleDeleteTask}
+                >
+                  {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                  Delete
+                  <span className="sr-only">Delete task</span>
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleOpenChange(false)}
+                disabled={isSubmitting || isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting || isDeleting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {task ? "Updating..." : "Creating..."}
+                  </>
+                ) : task ? (
+                  "Update"
+                ) : (
+                  "Create"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 

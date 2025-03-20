@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { DragDropContext, Droppable, Draggable, type DropResult } from "react-beautiful-dnd"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -10,7 +10,6 @@ import type { Project, Task } from "@/types/project"
 import { useProjects } from "@/hooks/use-projects"
 import TaskDialog from "./task-dialog"
 import { COLUMNS } from "@/constants/app-constants"
-import { getTasksByStatus } from "@/utils/task-utils"
 
 interface TaskBoardProps {
   project: Project
@@ -21,7 +20,13 @@ export default function TaskBoard({ project }: TaskBoardProps) {
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
 
-  const tasks = project.tasks
+  // Get tasks by status
+  const getTasksByStatus = useCallback(
+    (status: string) => {
+      return project.tasks.filter((task) => task.status === status)
+    },
+    [project.tasks],
+  )
 
   const handleDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result
@@ -31,21 +36,24 @@ export default function TaskBoard({ project }: TaskBoardProps) {
       return
     }
 
-    const updatedTasks = [...tasks]
-    const taskIndex = updatedTasks.findIndex((task) => task.id === draggableId)
+    // Find the task that was dragged
+    const task = project.tasks.find((t) => t.id === draggableId)
+    if (!task) return
 
-    if (taskIndex !== -1) {
-      const task = updatedTasks[taskIndex]
-      task.status = destination.droppableId
-
-      // Update the project with the new task status
-      const updatedProject = {
-        ...project,
-        tasks: updatedTasks,
-      }
-
-      updateProject(updatedProject)
+    // Create a new task with the updated status
+    const updatedTask = {
+      ...task,
+      status: destination.droppableId,
     }
+
+    // Create a new tasks array with the updated task
+    const updatedTasks = project.tasks.map((t) => (t.id === draggableId ? updatedTask : t))
+
+    // Update the project with the new tasks array
+    updateProject({
+      ...project,
+      tasks: updatedTasks,
+    })
   }
 
   const handleAddTask = () => {
@@ -56,6 +64,13 @@ export default function TaskBoard({ project }: TaskBoardProps) {
   const handleEditTask = (task: Task) => {
     setEditingTask(task)
     setIsTaskDialogOpen(true)
+  }
+
+  const handleTaskDialogClose = (open: boolean) => {
+    setIsTaskDialogOpen(open)
+    if (!open) {
+      setEditingTask(null)
+    }
   }
 
   return (
@@ -70,36 +85,47 @@ export default function TaskBoard({ project }: TaskBoardProps) {
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {COLUMNS.map((column) => (
-            <div key={column.id} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium">{column.title}</h3>
-                <span className="text-sm text-muted-foreground">{getTasksByStatus(tasks, column.id).length}</span>
+          {COLUMNS.map((column) => {
+            const tasksInColumn = getTasksByStatus(column.id)
+
+            return (
+              <div key={column.id} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium">{column.title}</h3>
+                  <span className="text-sm text-muted-foreground">{tasksInColumn.length}</span>
+                </div>
+                <Droppable droppableId={column.id}>
+                  {(provided) => (
+                    <Card className="min-h-[500px]" ref={provided.innerRef} {...provided.droppableProps}>
+                      <CardContent className="p-2 space-y-2">
+                        {tasksInColumn.map((task, index) => (
+                          <Draggable key={task.id} draggableId={task.id} index={index}>
+                            {(provided) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className="task-card-wrapper"
+                              >
+                                <TaskCard task={task} onClick={() => handleEditTask(task)} />
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </CardContent>
+                    </Card>
+                  )}
+                </Droppable>
               </div>
-              <Droppable droppableId={column.id}>
-                {(provided) => (
-                  <Card className="min-h-[500px]" ref={provided.innerRef} {...provided.droppableProps}>
-                    <CardContent className="p-2 space-y-2">
-                      {getTasksByStatus(tasks, column.id).map((task, index) => (
-                        <Draggable key={task.id} draggableId={task.id} index={index}>
-                          {(provided) => (
-                            <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
-                              <TaskCard task={task} onClick={() => handleEditTask(task)} />
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </CardContent>
-                  </Card>
-                )}
-              </Droppable>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </DragDropContext>
 
-      <TaskDialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen} project={project} task={editingTask} />
+      {isTaskDialogOpen && (
+        <TaskDialog open={isTaskDialogOpen} onOpenChange={handleTaskDialogClose} project={project} task={editingTask} />
+      )}
     </div>
   )
 }

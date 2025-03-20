@@ -1,9 +1,9 @@
 "use client"
 
-import { createContext, useContext, useState, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import type { Project } from "@/types/project"
 import { LOCAL_STORAGE_KEYS } from "@/constants/app-constants"
-import { useLocalStorage } from "./use-local-storage"
+import { useToast } from "@/hooks/use-toast"
 
 interface ProjectsContextType {
   projects: Project[]
@@ -19,50 +19,144 @@ interface ProjectsContextType {
 const ProjectsContext = createContext<ProjectsContextType | undefined>(undefined)
 
 export function ProjectsProvider({ children }: { children: ReactNode }) {
-  const [projects, setProjectsStorage, clearProjectsStorage] = useLocalStorage<Project[]>(
-    LOCAL_STORAGE_KEYS.PROJECTS,
-    [],
-  )
+  const [projects, setProjects] = useState<Project[]>([])
   const [activeProject, setActiveProjectState] = useState<Project | null>(null)
+  const { toast } = useToast()
 
-  // Initialize active project from stored projects
-  useState(() => {
-    if (projects && projects.length > 0 && !activeProject) {
-      setActiveProjectState(projects[0])
+  // Load projects from localStorage on initial render
+  useEffect(() => {
+    try {
+      const storedProjects = localStorage.getItem(LOCAL_STORAGE_KEYS.PROJECTS)
+      if (storedProjects) {
+        const parsedProjects = JSON.parse(storedProjects)
+        setProjects(parsedProjects)
+        if (parsedProjects.length > 0) {
+          setActiveProjectState(parsedProjects[0])
+        }
+      }
+    } catch (error) {
+      console.error("Failed to parse projects from localStorage:", error)
     }
-  })
+  }, [])
+
+  // Save projects to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEYS.PROJECTS, JSON.stringify(projects))
+    } catch (error) {
+      console.error("Failed to save projects to localStorage:", error)
+    }
+  }, [projects])
 
   const addProject = (project: Project) => {
-    setProjectsStorage((prev) => [...(prev || []), project])
-    setActiveProjectState(project)
+    try {
+      console.log("Adding project:", project)
+
+      // Create a new array with the new project
+      const newProjects = [...projects, project]
+
+      // Update state
+      setProjects(newProjects)
+      setActiveProjectState(project)
+
+      toast({
+        title: "Project created",
+        description: "The project has been created successfully.",
+      })
+    } catch (error) {
+      console.error("Error adding project:", error)
+      toast({
+        title: "Error",
+        description: "Failed to create the project. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const updateProject = (updatedProject: Project) => {
-    setProjectsStorage((prev) =>
-      (prev || []).map((project) => (project.id === updatedProject.id ? updatedProject : project)),
-    )
+    try {
+      console.log("Updating project:", updatedProject.id)
 
-    if (activeProject?.id === updatedProject.id) {
-      setActiveProjectState(updatedProject)
+      // Create a deep copy of the updated project to avoid reference issues
+      const projectCopy = JSON.parse(JSON.stringify(updatedProject))
+
+      // Create a new array with the updated project
+      const newProjects = projects.map((project) => (project.id === projectCopy.id ? projectCopy : project))
+
+      // Update state
+      setProjects(newProjects)
+
+      // Update the active project if needed
+      if (activeProject?.id === projectCopy.id) {
+        setActiveProjectState(projectCopy)
+      }
+    } catch (error) {
+      console.error("Error updating project:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update the project. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
   const deleteProject = (projectId: string) => {
-    setProjectsStorage((prev) => (prev || []).filter((project) => project.id !== projectId))
+    try {
+      console.log("Deleting project:", projectId)
 
-    if (activeProject?.id === projectId) {
-      setActiveProjectState(null)
+      // Create a new array without the deleted project
+      const newProjects = projects.filter((project) => project.id !== projectId)
+
+      // Update state
+      setProjects(newProjects)
+
+      // Update active project if needed
+      if (activeProject?.id === projectId) {
+        const newActiveProject = newProjects.length > 0 ? newProjects[0] : null
+        setActiveProjectState(newActiveProject)
+      }
+
+      toast({
+        title: "Project deleted",
+        description: "The project has been deleted successfully.",
+      })
+    } catch (error) {
+      console.error("Error deleting project:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete the project. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
-  const setProjects = (newProjects: Project[], newActiveProject: Project | null) => {
-    setProjectsStorage(newProjects)
-    setActiveProjectState(newActiveProject)
+  const setProjectsWithActive = (newProjects: Project[], newActiveProject: Project | null) => {
+    try {
+      setProjects(newProjects)
+      setActiveProjectState(newActiveProject)
+    } catch (error) {
+      console.error("Error setting projects:", error)
+    }
   }
 
   const clearProjects = () => {
-    clearProjectsStorage()
-    setActiveProjectState(null)
+    try {
+      setProjects([])
+      setActiveProjectState(null)
+      localStorage.removeItem(LOCAL_STORAGE_KEYS.PROJECTS)
+
+      toast({
+        title: "Projects cleared",
+        description: "All projects have been cleared.",
+      })
+    } catch (error) {
+      console.error("Error clearing projects:", error)
+      toast({
+        title: "Error",
+        description: "Failed to clear projects. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const setActiveProject = (project: Project | null) => {
@@ -72,13 +166,13 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
   return (
     <ProjectsContext.Provider
       value={{
-        projects: projects || [],
+        projects,
         activeProject,
         setActiveProject,
         addProject,
         updateProject,
         deleteProject,
-        setProjects,
+        setProjects: setProjectsWithActive,
         clearProjects,
       }}
     >

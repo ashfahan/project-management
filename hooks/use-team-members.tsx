@@ -4,6 +4,7 @@ import { createContext, useContext, type ReactNode } from "react"
 import type { TeamMember } from "@/types/project"
 import { LOCAL_STORAGE_KEYS } from "@/constants/app-constants"
 import { useLocalStorage } from "./use-local-storage"
+import { useToast } from "./use-toast"
 
 interface TeamMembersContextType {
   teamMembers: TeamMember[]
@@ -21,27 +22,97 @@ export function TeamMembersProvider({ children }: { children: ReactNode }) {
     LOCAL_STORAGE_KEYS.TEAM_MEMBERS,
     [],
   )
+  const { toast } = useToast()
 
   const addTeamMember = (member: TeamMember) => {
-    setTeamMembersStorage((prev) => [...(prev || []), member])
+    try {
+      console.log("Adding team member:", member)
+      setTeamMembersStorage((prev) => [...(prev || []), member])
+
+      toast({
+        title: "Team member added",
+        description: "The team member has been added successfully.",
+      })
+    } catch (error) {
+      console.error("Error adding team member:", error)
+      toast({
+        title: "Error",
+        description: "Failed to add the team member. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const updateTeamMember = (updatedMember: TeamMember) => {
-    setTeamMembersStorage((prev) =>
-      (prev || []).map((member) => (member.id === updatedMember.id ? updatedMember : member)),
-    )
+    try {
+      console.log("Updating team member:", updatedMember)
+      setTeamMembersStorage((prev) =>
+        (prev || []).map((member) => (member.id === updatedMember.id ? updatedMember : member)),
+      )
+
+      toast({
+        title: "Team member updated",
+        description: "The team member has been updated successfully.",
+      })
+    } catch (error) {
+      console.error("Error updating team member:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update the team member. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const deleteTeamMember = (memberId: string) => {
-    setTeamMembersStorage((prev) => (prev || []).filter((member) => member.id !== memberId))
+    try {
+      console.log("Deleting team member:", memberId)
+
+      // Update the state with the filtered team members
+      const updatedMembers = (teamMembers || []).filter((member) => member.id !== memberId)
+      console.log("Updated team members:", updatedMembers)
+
+      // Update localStorage
+      setTeamMembersStorage(updatedMembers)
+
+      toast({
+        title: "Team member deleted",
+        description: "The team member has been deleted successfully.",
+      })
+    } catch (error) {
+      console.error("Error deleting team member:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete the team member. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   const setTeamMembers = (members: TeamMember[]) => {
-    setTeamMembersStorage(members)
+    try {
+      setTeamMembersStorage(members)
+    } catch (error) {
+      console.error("Error setting team members:", error)
+    }
   }
 
   const clearTeamMembers = () => {
-    clearTeamMembersStorage()
+    try {
+      clearTeamMembersStorage()
+
+      toast({
+        title: "Team members cleared",
+        description: "All team members have been cleared.",
+      })
+    } catch (error) {
+      console.error("Error clearing team members:", error)
+      toast({
+        title: "Error",
+        description: "Failed to clear team members. Please try again.",
+        variant: "destructive",
+      })
+    }
   }
 
   return (
