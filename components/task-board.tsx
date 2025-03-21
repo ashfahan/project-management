@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import { DragDropContext, Droppable, Draggable, type DropResult } from "react-beautiful-dnd"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -19,6 +19,7 @@ export default function TaskBoard({ project }: TaskBoardProps) {
   const { updateProject } = useProjects()
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const isDraggingRef = useRef(false)
 
   // Get tasks by status
   const getTasksByStatus = useCallback(
@@ -28,8 +29,18 @@ export default function TaskBoard({ project }: TaskBoardProps) {
     [project.tasks],
   )
 
+  const handleDragStart = () => {
+    isDraggingRef.current = true
+  }
+
   const handleDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result
+
+    // Set a small timeout to reset the dragging state
+    // This prevents the dialog from opening when a card is clicked right after dragging
+    setTimeout(() => {
+      isDraggingRef.current = false
+    }, 100)
 
     if (!destination) return
     if (destination.droppableId === source.droppableId && destination.index === source.index) {
@@ -62,8 +73,11 @@ export default function TaskBoard({ project }: TaskBoardProps) {
   }
 
   const handleEditTask = (task: Task) => {
-    setEditingTask(task)
-    setIsTaskDialogOpen(true)
+    // Only open the dialog if we're not currently dragging
+    if (!isDraggingRef.current) {
+      setEditingTask(task)
+      setIsTaskDialogOpen(true)
+    }
   }
 
   const handleTaskDialogClose = (open: boolean) => {
@@ -83,7 +97,7 @@ export default function TaskBoard({ project }: TaskBoardProps) {
         </Button>
       </div>
 
-      <DragDropContext onDragEnd={handleDragEnd}>
+      <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {COLUMNS.map((column) => {
             const tasksInColumn = getTasksByStatus(column.id)
@@ -100,14 +114,19 @@ export default function TaskBoard({ project }: TaskBoardProps) {
                       <CardContent className="p-2 space-y-2">
                         {tasksInColumn.map((task, index) => (
                           <Draggable key={task.id} draggableId={task.id} index={index}>
-                            {(provided) => (
+                            {(provided, snapshot) => (
                               <div
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
                                 className="task-card-wrapper"
+                                data-is-dragging={snapshot.isDragging}
                               >
-                                <TaskCard task={task} onClick={() => handleEditTask(task)} />
+                                <TaskCard
+                                  task={task}
+                                  onClick={() => handleEditTask(task)}
+                                  isDragging={snapshot.isDragging}
+                                />
                               </div>
                             )}
                           </Draggable>

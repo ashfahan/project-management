@@ -14,12 +14,20 @@ import { getInitials } from "@/utils/string-utils"
 interface TaskCardProps {
   task: Task
   onClick: () => void
+  isDragging?: boolean
 }
 
-export default function TaskCard({ task, onClick }: TaskCardProps) {
+export default function TaskCard({ task, onClick, isDragging = false }: TaskCardProps) {
   const dueDate = task.dueDate ? new Date(task.dueDate) : null
 
   const handleClick = (e: React.MouseEvent) => {
+    // Prevent opening the dialog if we're dragging
+    if (isDragging) {
+      e.preventDefault()
+      e.stopPropagation()
+      return
+    }
+
     e.preventDefault()
     e.stopPropagation()
     onClick()
@@ -27,7 +35,7 @@ export default function TaskCard({ task, onClick }: TaskCardProps) {
 
   return (
     <Card
-      className="cursor-pointer hover:shadow-md transition-all"
+      className={`cursor-pointer hover:shadow-md transition-all ${isDragging ? "shadow-lg" : ""}`}
       onClick={handleClick}
       tabIndex={0}
       onKeyDown={(e) => {
