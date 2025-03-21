@@ -18,9 +18,10 @@ import { getInitials } from "@/utils/string-utils"
 interface TeamMemberSelectProps {
   selectedMembers: { id: string; name: string; avatar: string }[]
   onChange: (members: { id: string; name: string; avatar: string }[]) => void
+  allowWrap?: boolean
 }
 
-export default function TeamMemberSelect({ selectedMembers, onChange }: TeamMemberSelectProps) {
+export default function TeamMemberSelect({ selectedMembers, onChange, allowWrap = true }: TeamMemberSelectProps) {
   const { teamMembers, addTeamMember } = useTeamMembers()
   const [open, setOpen] = useState(false)
   const [addMemberOpen, setAddMemberOpen] = useState(false)
@@ -145,9 +146,16 @@ export default function TeamMemberSelect({ selectedMembers, onChange }: TeamMemb
       </Popover>
 
       {selectedMembers.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-2">
+        <div
+          className={cn(
+            "flex gap-2 mt-4 pb-1",
+            allowWrap
+              ? "flex-wrap"
+              : "flex-nowrap overflow-x-auto max-w-full scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent",
+          )}
+        >
           {selectedMembers.map((member) => (
-            <Badge key={member.id} variant="secondary" className="flex items-center gap-1">
+            <Badge key={member.id} variant="secondary" className="flex items-center gap-1 flex-shrink-0 mb-1">
               <Avatar className="h-4 w-4 mr-1">
                 <AvatarImage src={member.avatar} alt={`Team member ${member.name}`} />
                 <AvatarFallback>{getInitials(member.name)}</AvatarFallback>

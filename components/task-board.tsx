@@ -23,6 +23,7 @@ import {
 import { sortableKeyboardCoordinates, arrayMove } from "@dnd-kit/sortable"
 import { TaskColumn } from "./task-column"
 import { createPortal } from "react-dom"
+import { toast } from "sonner"
 
 interface TaskBoardProps {
   project: Project
@@ -72,7 +73,7 @@ export default function TaskBoard({ project }: TaskBoardProps) {
       setActiveTask(task)
       setActiveColumn(task.status)
       isDraggingRef.current = true
-      document.body.classList.add("dragging-active")
+      document.body.classList.add("cursor-grabbing")
     }
   }
 
@@ -95,7 +96,7 @@ export default function TaskBoard({ project }: TaskBoardProps) {
       const columnElement = document.querySelector(`[data-column-id="${columnId}"]`)
       if (!columnElement) return tasksInColumn.length
 
-      const taskElements = Array.from(columnElement.querySelectorAll(".task-card-wrapper"))
+      const taskElements = Array.from(columnElement.querySelectorAll("[data-task-id]"))
       if (taskElements.length === 0) return 0
 
       // Find the task element the cursor is closest to
@@ -196,7 +197,7 @@ export default function TaskBoard({ project }: TaskBoardProps) {
       setOverColumn(null)
       setDropPosition(null)
       isDraggingRef.current = false
-      document.body.classList.remove("dragging-active")
+      document.body.classList.remove("cursor-grabbing")
 
       if (!over || currentOverColumn === null) return
 
@@ -298,6 +299,11 @@ export default function TaskBoard({ project }: TaskBoardProps) {
         ...project,
         tasks: updatedTasks,
       })
+
+      // Show toast notification
+      toast.success("Task moved", {
+        description: "The task has been moved successfully.",
+      })
     },
     [project, overColumn, dropPosition, getTasksByStatus, updateProject],
   )
@@ -333,15 +339,15 @@ export default function TaskBoard({ project }: TaskBoardProps) {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="kanban-board-container">
-          <div className="kanban-board">
+        <div className="w-full overflow-x-auto pb-4 -mx-2 px-2 sm:mx-0 sm:px-0 touch-pan-x">
+          <div className="flex flex-row min-w-max gap-4">
             {COLUMNS.map((column) => {
               const tasksInColumn = getTasksByStatus(column.id)
               const isActiveColumn = activeColumn === column.id
               const isOverThisColumn = overColumn === column.id
 
               return (
-                <div key={column.id} className="kanban-column-wrapper">
+                <div key={column.id} className="flex-none w-[280px] sm:w-[300px]">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium text-sm sm:text-base">{column.title}</h3>
                     <span className="text-xs sm:text-sm text-muted-foreground">{tasksInColumn.length}</span>
@@ -365,7 +371,7 @@ export default function TaskBoard({ project }: TaskBoardProps) {
           createPortal(
             <DragOverlay adjustScale={false}>
               {activeTask && (
-                <div className="task-card-overlay">
+                <div className="w-[250px] min-h-[140px] sm:min-h-[160px] rotate-2 scale-105 shadow-lg pointer-events-none z-50">
                   <TaskCard task={activeTask} onClick={() => {}} isDragging={true} />
                 </div>
               )}

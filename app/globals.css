@@ -13,7 +13,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 221.2 83.2% 53.3%;
+    --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -36,7 +36,7 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: 222.2 47.4% 11.2%;
 
     --radius: 0.5rem;
   }
@@ -51,7 +51,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 217.2 91.2% 59.8%;
+    --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -74,7 +74,7 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --ring: 210 40% 98%;
   }
 }
 
@@ -130,144 +130,6 @@
     min-width: 300px;
     max-width: 300px;
   }
-
-  .kanban-board-container {
-    margin-left: 0;
-    margin-right: 0;
-    padding-left: 0;
-    padding-right: 0;
-  }
-}
-
-/* Task column styles */
-.task-column {
-  min-height: 400px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 0.5rem;
-  overflow-y: auto;
-  height: calc(100vh - 240px); /* Adjust based on your header/footer height */
-  max-height: 800px;
-}
-
-@media (min-width: 640px) {
-  .task-column {
-    min-height: 500px;
-    height: calc(100vh - 200px);
-  }
-}
-
-/* Task card styles */
-.task-card-wrapper {
-  position: relative;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  margin-bottom: 12px;
-  user-select: none;
-  touch-action: none;
-  min-height: 140px; /* Smaller on mobile */
-}
-
-@media (min-width: 640px) {
-  .task-card-wrapper {
-    min-height: 160px;
-  }
-}
-
-.task-card-wrapper:last-child {
-  margin-bottom: 0;
-}
-
-.task-card-wrapper.is-dragging {
-  z-index: 9999;
-  opacity: 0.5;
-}
-
-/* Dragged item overlay */
-.task-card-overlay {
-  transform: rotate(2deg) scale(1.05);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
-  pointer-events: none;
-  cursor: grabbing;
-  width: 250px;
-  min-height: 140px; /* Match mobile size */
-  z-index: 9999;
-}
-
-@media (min-width: 640px) {
-  .task-card-overlay {
-    min-height: 160px;
-  }
-}
-
-/* Placeholder styles */
-.drop-placeholder,
-.task-placeholder {
-  animation: pulse 1.5s infinite ease-in-out;
-  border-radius: var(--radius);
-  min-height: 70px; /* Smaller on mobile */
-  margin-bottom: 12px;
-  position: relative;
-  z-index: 5;
-}
-
-@media (min-width: 640px) {
-  .drop-placeholder,
-  .task-placeholder {
-    min-height: 80px;
-  }
-}
-
-.drop-placeholder {
-  margin-top: auto;
-  margin-bottom: 0;
-  flex-grow: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.drop-placeholder-inner,
-.task-placeholder-inner {
-  background-color: hsl(var(--primary) / 0.15);
-  border: 2px dashed hsl(var(--primary) / 0.5);
-  border-radius: var(--radius);
-  height: 100%;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: hsl(var(--primary));
-  font-weight: 500;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 1rem;
-  min-height: 70px; /* Smaller on mobile */
-  font-size: 0.875rem;
-}
-
-@media (min-width: 640px) {
-  .drop-placeholder-inner,
-  .task-placeholder-inner {
-    min-height: 80px;
-    font-size: 1rem;
-  }
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.7;
-    transform: scale(0.98);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* Fix for drag cursor */
-.dragging-active {
-  cursor: grabbing !important;
 }
 
 /* Scrollbar styling for better visibility */
@@ -293,14 +155,6 @@
 
 .kanban-board-container::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
-}
-
-/* Task column scrollbar */
-.task-column::-webkit-scrollbar {
-  width: 4px;
-}
-
-@media (min-width:   / 0.5);
 }
 
 /* Task column scrollbar */
@@ -358,5 +212,22 @@
   .container {
     max-width: 1280px;
   }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Fix for drag cursor */
+.dragging-active {
+  cursor: grabbing !important;
 }
 

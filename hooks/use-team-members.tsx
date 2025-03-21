@@ -4,7 +4,7 @@ import { createContext, useContext, type ReactNode } from "react"
 import type { TeamMember } from "@/types/project"
 import { LOCAL_STORAGE_KEYS } from "@/constants/app-constants"
 import { useLocalStorage } from "./use-local-storage"
-import { useToast } from "./use-toast"
+import { toast } from "sonner"
 
 interface TeamMembersContextType {
   teamMembers: TeamMember[]
@@ -22,23 +22,19 @@ export function TeamMembersProvider({ children }: { children: ReactNode }) {
     LOCAL_STORAGE_KEYS.TEAM_MEMBERS,
     [],
   )
-  const { toast } = useToast()
 
   const addTeamMember = (member: TeamMember) => {
     try {
       console.log("Adding team member:", member)
       setTeamMembersStorage((prev) => [...(prev || []), member])
 
-      toast({
-        title: "Team member added",
+      toast.success("Team member added", {
         description: "The team member has been added successfully.",
       })
     } catch (error) {
       console.error("Error adding team member:", error)
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to add the team member. Please try again.",
-        variant: "destructive",
       })
     }
   }
@@ -50,16 +46,13 @@ export function TeamMembersProvider({ children }: { children: ReactNode }) {
         (prev || []).map((member) => (member.id === updatedMember.id ? updatedMember : member)),
       )
 
-      toast({
-        title: "Team member updated",
+      toast.success("Team member updated", {
         description: "The team member has been updated successfully.",
       })
     } catch (error) {
       console.error("Error updating team member:", error)
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to update the team member. Please try again.",
-        variant: "destructive",
       })
     }
   }
@@ -75,16 +68,13 @@ export function TeamMembersProvider({ children }: { children: ReactNode }) {
       // Update localStorage
       setTeamMembersStorage(updatedMembers)
 
-      toast({
-        title: "Team member deleted",
+      toast.success("Team member deleted", {
         description: "The team member has been deleted successfully.",
       })
     } catch (error) {
       console.error("Error deleting team member:", error)
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to delete the team member. Please try again.",
-        variant: "destructive",
       })
     }
   }
@@ -101,16 +91,13 @@ export function TeamMembersProvider({ children }: { children: ReactNode }) {
     try {
       clearTeamMembersStorage()
 
-      toast({
-        title: "Team members cleared",
+      toast.success("Team members cleared", {
         description: "All team members have been cleared.",
       })
     } catch (error) {
       console.error("Error clearing team members:", error)
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to clear team members. Please try again.",
-        variant: "destructive",
       })
     }
   }

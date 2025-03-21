@@ -69,20 +69,23 @@ export function TaskColumn({
     <Card
       ref={setNodeRef}
       style={style}
-      className={`min-h-[500px] transition-colors duration-200 ${
+      className={`transition-colors duration-200 cursor-default ${
         isOver ? "bg-accent/50 ring-2 ring-primary/20" : ""
-      } ${isActiveColumn ? "active-column" : ""}`}
+      } ${isActiveColumn ? "ring-2 ring-primary/20" : ""}`}
       data-column-id={id}
       data-is-over={isOver ? "true" : "false"}
       {...attributes}
       {...listeners}
     >
-      <CardContent className="p-2 task-column">
+      <CardContent className="p-2 flex flex-col gap-3 overflow-y-auto h-[500px] sm:h-[650px]">
         <SortableContext items={tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
           {tasksWithPlaceholder.map((task, index) =>
             "isPlaceholder" in task ? (
-              <div key="placeholder" className="task-placeholder">
-                <div className="task-placeholder-inner">
+              <div
+                key="placeholder"
+                className="min-h-[70px] sm:min-h-[80px] mb-3 rounded-lg animate-pulse relative z-10"
+              >
+                <div className="bg-primary/15 border-2 border-dashed border-primary/50 rounded-lg h-full w-full flex items-center justify-center text-primary font-medium shadow-md p-4 text-sm sm:text-base">
                   <span>Drop here</span>
                 </div>
               </div>
@@ -94,8 +97,8 @@ export function TaskColumn({
 
         {/* Empty column placeholder - only shown when dragging over an empty column from a different column */}
         {isDraggingFromDifferentColumn && tasks.length === 0 && (
-          <div className="drop-placeholder">
-            <div className="drop-placeholder-inner">
+          <div className="mt-auto mb-0 flex-grow flex items-center justify-center min-h-[70px] sm:min-h-[80px] animate-pulse">
+            <div className="bg-primary/15 border-2 border-dashed border-primary/50 rounded-lg h-full w-full flex items-center justify-center text-primary font-medium shadow-md p-4 text-sm sm:text-base">
               <span>Drop here</span>
             </div>
           </div>

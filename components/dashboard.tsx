@@ -3,11 +3,11 @@
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, Menu, Sun, Moon } from "lucide-react"
+import { PlusCircle, Menu, Sun, Moon, Edit } from "lucide-react"
 import ProjectCard from "./project-card"
 import TaskBoard from "./task-board"
 import { useProjects } from "@/hooks/use-projects"
-import CreateProjectDialog from "./create-project-dialog"
+import ProjectDialog from "./project-dialog"
 import type { Project } from "@/types/project"
 import { ThemeToggle } from "./theme-toggle"
 import { SeedDataButton } from "./seed-data-button"
@@ -15,12 +15,27 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 export default function Dashboard() {
   const { projects, activeProject, setActiveProject } = useProjects()
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false)
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [activeTab, setActiveTab] = useState("projects")
 
   const handleProjectSelect = (project: Project) => {
     setActiveProject(project)
     setActiveTab("board")
+
+    // Removed the toast notification for project selection
+  }
+
+  const handleEditProject = () => {
+    if (activeProject) {
+      setEditingProject(activeProject)
+      setIsProjectDialogOpen(true)
+    }
+  }
+
+  const handleCreateProject = () => {
+    setEditingProject(null)
+    setIsProjectDialogOpen(true)
   }
 
   return (
@@ -49,10 +64,16 @@ export default function Dashboard() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setIsCreateDialogOpen(true)}>
+              <DropdownMenuItem onClick={handleCreateProject}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 New Project
               </DropdownMenuItem>
+              {activeProject && activeTab === "board" && (
+                <DropdownMenuItem onClick={handleEditProject}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit Project
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                 <div
                   className="flex items-center w-full"
@@ -81,10 +102,16 @@ export default function Dashboard() {
         <div className="hidden sm:flex items-center gap-2">
           <ThemeToggle />
           <SeedDataButton />
-          <Button onClick={() => setIsCreateDialogOpen(true)} className="h-9">
+          <Button onClick={handleCreateProject} className="h-9">
             <PlusCircle className="mr-2 h-4 w-4" />
             New Project
           </Button>
+          {activeProject && activeTab === "board" && (
+            <Button onClick={handleEditProject} variant="outline" className="h-9">
+              <Edit className="mr-2 h-4 w-4" />
+              Edit Project
+            </Button>
+          )}
         </div>
       </div>
 
@@ -110,7 +137,7 @@ export default function Dashboard() {
               {projects.length === 0 && (
                 <div className="col-span-full flex flex-col items-center justify-center p-8 sm:p-12 bg-muted rounded-lg">
                   <p className="text-muted-foreground mb-4">No projects yet</p>
-                  <Button onClick={() => setIsCreateDialogOpen(true)} className="h-9">
+                  <Button onClick={handleCreateProject} className="h-9">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Create your first project
                   </Button>
@@ -137,7 +164,7 @@ export default function Dashboard() {
             {projects.length === 0 && (
               <div className="col-span-full flex flex-col items-center justify-center p-8 bg-muted rounded-lg">
                 <p className="text-muted-foreground mb-4">No projects yet</p>
-                <Button onClick={() => setIsCreateDialogOpen(true)} className="h-9">
+                <Button onClick={handleCreateProject} className="h-9">
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Create your first project
                 </Button>
@@ -148,7 +175,7 @@ export default function Dashboard() {
         {activeTab === "board" && activeProject && <TaskBoard project={activeProject} />}
       </div>
 
-      <CreateProjectDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
+      <ProjectDialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen} project={editingProject} />
     </div>
   )
 }

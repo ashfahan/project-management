@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ProjectsProvider } from "@/hooks/use-projects"
 import { TeamMembersProvider } from "@/hooks/use-team-members"
+import { SonnerToastProvider } from "@/components/sonner-toast-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -23,6 +24,7 @@ export default function RootLayout({
           <TeamMembersProvider>
             <ProjectsProvider>{children}</ProjectsProvider>
           </TeamMembersProvider>
+          <SonnerToastProvider />
         </ThemeProvider>
       </body>
     </html>

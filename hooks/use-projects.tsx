@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import type { Project } from "@/types/project"
 import { LOCAL_STORAGE_KEYS } from "@/constants/app-constants"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 interface ProjectsContextType {
   projects: Project[]
@@ -21,7 +21,6 @@ const ProjectsContext = createContext<ProjectsContextType | undefined>(undefined
 export function ProjectsProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([])
   const [activeProject, setActiveProjectState] = useState<Project | null>(null)
-  const { toast } = useToast()
 
   // Load projects from localStorage on initial render
   useEffect(() => {
@@ -58,17 +57,10 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       // Update state
       setProjects(newProjects)
       setActiveProjectState(project)
-
-      toast({
-        title: "Project created",
-        description: "The project has been created successfully.",
-      })
     } catch (error) {
       console.error("Error adding project:", error)
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to create the project. Please try again.",
-        variant: "destructive",
       })
     }
   }
@@ -92,10 +84,8 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Error updating project:", error)
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to update the project. Please try again.",
-        variant: "destructive",
       })
     }
   }
@@ -115,17 +105,10 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         const newActiveProject = newProjects.length > 0 ? newProjects[0] : null
         setActiveProjectState(newActiveProject)
       }
-
-      toast({
-        title: "Project deleted",
-        description: "The project has been deleted successfully.",
-      })
     } catch (error) {
       console.error("Error deleting project:", error)
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to delete the project. Please try again.",
-        variant: "destructive",
       })
     }
   }
@@ -145,16 +128,13 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       setActiveProjectState(null)
       localStorage.removeItem(LOCAL_STORAGE_KEYS.PROJECTS)
 
-      toast({
-        title: "Projects cleared",
+      toast.success("Projects cleared", {
         description: "All projects have been cleared.",
       })
     } catch (error) {
       console.error("Error clearing projects:", error)
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: "Failed to clear projects. Please try again.",
-        variant: "destructive",
       })
     }
   }

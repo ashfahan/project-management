@@ -64,13 +64,15 @@ export default function TaskCard({ task, onClick, isDragging = false }: TaskCard
     <div
       ref={setNodeRef}
       style={style}
-      className={`task-card-wrapper ${isCurrentlyDragging ? "is-dragging" : ""}`}
+      className={`relative transition-all mb-3 last:mb-0 select-none touch-none min-h-[140px] sm:min-h-[160px] ${
+        isCurrentlyDragging ? "z-50 opacity-50" : ""
+      }`}
       data-task-id={task.id}
       {...attributes}
       {...listeners}
     >
       <Card
-        className={`cursor-grab hover:shadow-md transition-all min-h-[160px] ${
+        className={`cursor-grab hover:shadow-md transition-all min-h-[140px] sm:min-h-[160px] ${
           isCurrentlyDragging
             ? "shadow-lg border-2 border-primary cursor-grabbing"
             : "border border-border hover:border-primary/30"
