@@ -87,6 +87,88 @@
   }
 }
 
+/* Z-index layers */
+.popover-content {
+  z-index: 50;
+}
+
+.dialog-overlay {
+  z-index: 40;
+}
+
+.dialog-content {
+  z-index: 50;
+}
+
+.dropdown-menu-content {
+  z-index: 50;
+}
+
+/* Toast styling */
+.toast-container [data-sonner-toast] {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Toast type indicators - only use colored left borders */
+.toast-container [data-sonner-toast][data-type="success"] {
+  border-left: 4px solid hsl(var(--success));
+}
+
+.toast-container [data-sonner-toast][data-type="error"] {
+  border-left: 4px solid hsl(var(--destructive));
+}
+
+.toast-container [data-sonner-toast][data-type="warning"] {
+  border-left: 4px solid hsl(var(--warning));
+}
+
+.toast-container [data-sonner-toast][data-type="info"] {
+  border-left: 4px solid hsl(var(--primary));
+}
+
+/* Use theme foreground color for all titles */
+.toast-container [data-sonner-toast] [data-title] {
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.toast-container [data-sonner-toast] [data-description] {
+  margin-top: 4px;
+  font-size: 0.875rem;
+  color: hsl(var(--foreground) / 0.8);
+}
+
+/* Style the undo button */
+.toast-container [data-sonner-toast] [data-button] {
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  transition: background-color 0.2s ease;
+}
+
+.toast-container [data-sonner-toast] [data-button]:hover {
+  background-color: hsl(var(--primary) / 0.2);
+}
+
+/* Fix close button styling */
+.toast-container [data-sonner-toast] [data-close-button] {
+  color: hsl(var(--foreground) / 0.5);
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.toast-container [data-sonner-toast] [data-close-button]:hover {
+  opacity: 1;
+  background: transparent;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

@@ -208,6 +208,9 @@ export default function TaskBoard({ project }: TaskBoardProps) {
       const draggedTask = project.tasks.find((t) => t.id === activeTaskId)
       if (!draggedTask) return
 
+      // Store the original project state for potential undo
+      const originalProject = JSON.parse(JSON.stringify(project)) as Project
+
       // Determine target column
       const isOverColumn = COLUMNS.some((col) => col.id === overId)
       let targetColumnId = isOverColumn ? overId : currentOverColumn
@@ -295,14 +298,27 @@ export default function TaskBoard({ project }: TaskBoardProps) {
       }
 
       // Update the project
-      updateProject({
+      const updatedProject = {
         ...project,
         tasks: updatedTasks,
-      })
+      }
 
-      // Show toast notification
+      updateProject(updatedProject)
+
+      // Show toast with undo action
       toast.success("Task moved", {
         description: "The task has been moved successfully.",
+        action: {
+          label: "Undo",
+          onClick: () => {
+            // Restore the original project state
+            updateProject(originalProject)
+
+            toast.success("Move undone", {
+              description: "The task has been returned to its original position.",
+            })
+          },
+        },
       })
     },
     [project, overColumn, dropPosition, getTasksByStatus, updateProject],

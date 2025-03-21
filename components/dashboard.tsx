@@ -12,18 +12,18 @@ import type { Project } from "@/types/project"
 import { ThemeToggle } from "./theme-toggle"
 import { SeedDataButton } from "./seed-data-button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useTheme } from "next-themes"
 
 export default function Dashboard() {
   const { projects, activeProject, setActiveProject } = useProjects()
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
   const [activeTab, setActiveTab] = useState("projects")
+  const { theme, setTheme } = useTheme()
 
   const handleProjectSelect = (project: Project) => {
     setActiveProject(project)
     setActiveTab("board")
-
-    // Removed the toast notification for project selection
   }
 
   const handleEditProject = () => {
@@ -36,6 +36,10 @@ export default function Dashboard() {
   const handleCreateProject = () => {
     setEditingProject(null)
     setIsProjectDialogOpen(true)
+  }
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark")
   }
 
   return (
@@ -63,7 +67,7 @@ export default function Dashboard() {
                 <span className="sr-only">Actions</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" className="z-50">
               <DropdownMenuItem onClick={handleCreateProject}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 New Project
@@ -74,20 +78,9 @@ export default function Dashboard() {
                   Edit Project
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                <div
-                  className="flex items-center w-full"
-                  onClick={() => {
-                    const { theme, setTheme } = document.querySelector("html")?.classList.contains("dark")
-                      ? { theme: "dark", setTheme: () => document.documentElement.classList.remove("dark") }
-                      : { theme: "light", setTheme: () => document.documentElement.classList.add("dark") }
-                    setTheme()
-                  }}
-                >
-                  <Sun className="h-4 w-4 mr-2 dark:hidden" />
-                  <Moon className="h-4 w-4 mr-2 hidden dark:block" />
-                  <span>Toggle Theme</span>
-                </div>
+              <DropdownMenuItem onClick={toggleTheme}>
+                {theme === "dark" ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
+                Toggle Theme
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <div className="w-full" onClick={(e) => e.stopPropagation()}>

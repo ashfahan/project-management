@@ -15,6 +15,7 @@ import TeamMemberSelect from "./team-member-select"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { PROJECT_STATUSES } from "@/constants/app-constants"
 import { toast } from "sonner"
+import { Loader2 } from "lucide-react"
 import { DeleteConfirmPopover } from "./delete-confirm-popover"
 
 interface ProjectDialogProps {
@@ -121,7 +122,10 @@ export default function ProjectDialog({ open, onOpenChange, project = null }: Pr
     setIsDeleting(true)
 
     try {
-      const projectToDelete = { ...project }
+      // Store a deep copy of the project for potential undo
+      const projectToDelete = JSON.parse(JSON.stringify(project)) as Project
+
+      // Delete the project
       deleteProject(project.id)
 
       // Close the dialog
@@ -133,9 +137,11 @@ export default function ProjectDialog({ open, onOpenChange, project = null }: Pr
         action: {
           label: "Undo",
           onClick: () => {
+            // Restore the project
             addProject(projectToDelete)
+
             toast.success("Project restored", {
-              description: "The project has been restored.",
+              description: "The project has been restored successfully.",
             })
           },
         },
@@ -243,7 +249,16 @@ export default function ProjectDialog({ open, onOpenChange, project = null }: Pr
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting || isDeleting}>
-              {isSubmitting ? (isEditing ? "Updating..." : "Creating...") : isEditing ? "Update" : "Create"}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isEditing ? "Updating..." : "Creating..."}
+                </>
+              ) : isEditing ? (
+                "Update"
+              ) : (
+                "Create"
+              )}
             </Button>
           </DialogFooter>
         </form>
