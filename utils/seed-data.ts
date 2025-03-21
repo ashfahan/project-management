@@ -89,13 +89,16 @@ export function generateSeedTasks(teamMembers: TeamMember[], count = 8): Task[] 
     "Conduct user testing",
   ]
 
+  // Group tasks by status to assign positions
+  const tasksByStatus: Record<string, Task[]> = {}
+
   for (let i = 0; i < count; i++) {
     const randomStatus = randomItem(statuses)
     const randomPriority = randomItem(priorities)
     const randomAssignee = Math.random() > 0.2 ? randomItem(teamMembers) : undefined
     const hasDueDate = Math.random() > 0.2
 
-    tasks.push({
+    const task: Task = {
       id: uuidv4(),
       title: randomItem(taskTitles),
       description: "This is a sample task description generated for testing purposes.",
@@ -104,8 +107,26 @@ export function generateSeedTasks(teamMembers: TeamMember[], count = 8): Task[] 
       dueDate: hasDueDate ? randomDate(today, oneMonthAhead).toISOString() : undefined,
       assignee: randomAssignee,
       createdAt: new Date().toISOString(),
-    })
+    }
+
+    // Initialize the status group if it doesn't exist
+    if (!tasksByStatus[randomStatus]) {
+      tasksByStatus[randomStatus] = []
+    }
+
+    // Add the task to its status group
+    tasksByStatus[randomStatus].push(task)
   }
+
+  // Assign positions within each status group
+  Object.keys(tasksByStatus).forEach((status) => {
+    tasksByStatus[status].forEach((task, index) => {
+      task.position = index
+    })
+
+    // Add tasks from this status group to the final tasks array
+    tasks.push(...tasksByStatus[status])
+  })
 
   return tasks
 }

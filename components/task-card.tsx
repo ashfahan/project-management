@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -10,6 +9,8 @@ import type { Task } from "@/types/project"
 import { formatDueDate, getDeadlineColor } from "@/utils/date-utils"
 import { getPriorityVariant } from "@/utils/string-utils"
 import { getInitials } from "@/utils/string-utils"
+import { useSortable } from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 
 interface TaskCardProps {
   task: Task
@@ -20,9 +21,35 @@ interface TaskCardProps {
 export default function TaskCard({ task, onClick, isDragging = false }: TaskCardProps) {
   const dueDate = task.dueDate ? new Date(task.dueDate) : null
 
+  // Add sortable functionality directly to the TaskCard
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging: isSortableDragging,
+  } = useSortable({
+    id: task.id,
+    data: {
+      type: "task",
+      task,
+    },
+  })
+
+  // Use either the passed isDragging prop or the sortable isDragging state
+  const isCurrentlyDragging = isDragging || isSortableDragging
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isCurrentlyDragging ? 0.5 : 1,
+    zIndex: isCurrentlyDragging ? 999 : "auto",
+  }
+
   const handleClick = (e: React.MouseEvent) => {
     // Prevent opening the dialog if we're dragging
-    if (isDragging) {
+    if (isCurrentlyDragging) {
       e.preventDefault()
       e.stopPropagation()
       return
@@ -34,45 +61,58 @@ export default function TaskCard({ task, onClick, isDragging = false }: TaskCard
   }
 
   return (
-    <Card
-      className={`cursor-pointer hover:shadow-md transition-all ${isDragging ? "shadow-lg" : ""}`}
-      onClick={handleClick}
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault()
-          onClick()
-        }
-      }}
-      role="button"
-      aria-label={`Edit task: ${task.title}`}
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`task-card-wrapper ${isCurrentlyDragging ? "is-dragging" : ""}`}
+      data-task-id={task.id}
+      {...attributes}
+      {...listeners}
     >
-      <CardContent className="p-3 space-y-2">
-        <div className="flex justify-between items-start gap-2">
-          <h4 className="font-medium line-clamp-2">{task.title}</h4>
-          <Badge variant={getPriorityVariant(task.priority)}>
-            {task.priority}
-            <span className="sr-only">Priority: {task.priority}</span>
-          </Badge>
-        </div>
-        {task.description && <p className="text-sm text-muted-foreground line-clamp-2">{task.description}</p>}
-      </CardContent>
-      <CardFooter className="p-3 pt-0 flex justify-between items-center">
-        {task.assignee && (
-          <Avatar className="h-6 w-6">
-            <AvatarImage src={task.assignee.avatar} alt={`Assigned to ${task.assignee.name}`} />
-            <AvatarFallback>{getInitials(task.assignee.name)}</AvatarFallback>
-          </Avatar>
-        )}
-
-        {dueDate && (
-          <div className={`flex items-center text-xs gap-1 ${getDeadlineColor(dueDate)}`}>
-            <CalendarIcon className="h-3 w-3" />
-            <span>{formatDueDate(dueDate)}</span>
+      <Card
+        className={`cursor-grab hover:shadow-md transition-all min-h-[160px] ${
+          isCurrentlyDragging
+            ? "shadow-lg border-2 border-primary cursor-grabbing"
+            : "border border-border hover:border-primary/30"
+        }`}
+        onClick={handleClick}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            onClick()
+          }
+        }}
+        role="button"
+        aria-label={`Edit task: ${task.title}`}
+      >
+        <CardContent className="p-3 space-y-2 overflow-hidden">
+          <div className="flex justify-between items-start gap-2">
+            <h4 className="font-medium line-clamp-2">{task.title}</h4>
+            <Badge variant={getPriorityVariant(task.priority)}>
+              {task.priority}
+              <span className="sr-only">Priority: {task.priority}</span>
+            </Badge>
           </div>
-        )}
-      </CardFooter>
-    </Card>
+          {task.description && <p className="text-sm text-muted-foreground line-clamp-3">{task.description}</p>}
+        </CardContent>
+        <CardFooter className="p-3 pt-0 flex justify-between items-center absolute bottom-0 left-0 right-0">
+          {task.assignee && (
+            <Avatar className="h-6 w-6">
+              <AvatarImage src={task.assignee.avatar} alt={`Assigned to ${task.assignee.name}`} />
+              <AvatarFallback>{getInitials(task.assignee.name)}</AvatarFallback>
+            </Avatar>
+          )}
+
+          {dueDate && (
+            <div className={`flex items-center text-xs gap-1 ${getDeadlineColor(dueDate)}`}>
+              <CalendarIcon className="h-3 w-3" />
+              <span>{formatDueDate(dueDate)}</span>
+            </div>
+          )}
+        </CardFooter>
+      </Card>
+    </div>
   )
 }
 

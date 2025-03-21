@@ -13,6 +13,7 @@ export interface Task {
   priority: string
   dueDate?: string
   assignee?: TeamMember
+  position?: number // Added position field for ordering within columns
   createdAt: string
   updatedAt?: string
 }

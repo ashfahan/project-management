@@ -39,7 +39,6 @@ export default function TaskDialog({ open, onOpenChange, project, task }: TaskDi
   const [errors, setErrors] = useState<{ title?: string; dueDate?: string }>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   useEffect(() => {
     if (task) {
@@ -99,12 +98,57 @@ export default function TaskDialog({ open, onOpenChange, project, task }: TaskDi
           updatedAt: new Date().toISOString(),
         }
 
-        const updatedTasks = project.tasks.map((t) => (t.id === task.id ? updatedTask : t))
+        // If the status has changed, we need to update positions
+        if (task.status !== status) {
+          // Get all tasks in the new status column
+          const tasksInNewStatus = project.tasks
+            .filter((t) => t.status === status && t.id !== task.id)
+            .sort((a, b) => {
+              if (a.position !== undefined && b.position !== undefined) {
+                return a.position - b.position
+              }
+              return 0
+            })
 
-        updateProject({
-          ...project,
-          tasks: updatedTasks,
-        })
+          // Add the task at the end of the column
+          updatedTask.position = tasksInNewStatus.length
+
+          // Get all tasks in the old status column
+          const tasksInOldStatus = project.tasks
+            .filter((t) => t.status === task.status && t.id !== task.id)
+            .sort((a, b) => {
+              if (a.position !== undefined && b.position !== undefined) {
+                return a.position - b.position
+              }
+              return 0
+            })
+
+          // Update positions for tasks in the old status column
+          const updatedTasksInOldStatus = tasksInOldStatus.map((t, index) => ({
+            ...t,
+            position: index,
+          }))
+
+          // Combine all tasks
+          const updatedTasks = [
+            ...project.tasks.filter((t) => t.id !== task.id && t.status !== task.status && t.status !== status),
+            ...updatedTasksInOldStatus,
+            ...tasksInNewStatus,
+            updatedTask,
+          ]
+
+          updateProject({
+            ...project,
+            tasks: updatedTasks,
+          })
+        } else {
+          // If status hasn't changed, just update the task
+          const updatedTasks = project.tasks.map((t) => (t.id === task.id ? updatedTask : t))
+          updateProject({
+            ...project,
+            tasks: updatedTasks,
+          })
+        }
 
         toast({
           title: "Task updated",
@@ -112,12 +156,24 @@ export default function TaskDialog({ open, onOpenChange, project, task }: TaskDi
         })
       } else {
         // Create new task
+        // Get all tasks in the selected status column
+        const tasksInStatus = project.tasks
+          .filter((t) => t.status === status)
+          .sort((a, b) => {
+            if (a.position !== undefined && b.position !== undefined) {
+              return a.position - b.position
+            }
+            return 0
+          })
+
+        // Create new task with position at the end of the column
         const newTask: Task = {
           id: uuidv4(),
           title,
           description,
           status,
           priority,
+          position: tasksInStatus.length, // Always add at the end of the column
           dueDate: dueDate?.toISOString(),
           assignee,
           createdAt: new Date().toISOString(),
@@ -153,17 +209,30 @@ export default function TaskDialog({ open, onOpenChange, project, task }: TaskDi
     setIsDeleting(true)
 
     try {
-      // Create a new array without the task to be deleted
-      const updatedTasks = project.tasks.filter((t) => t.id !== task.id)
+      // Get all tasks in the same status column (excluding the task to delete)
+      const tasksInSameStatus = project.tasks
+        .filter((t) => t.status === task.status && t.id !== task.id)
+        .sort((a, b) => {
+          if (a.position !== undefined && b.position !== undefined) {
+            return a.position - b.position
+          }
+          return 0
+        })
 
-      // Create a new project object with the updated tasks
-      const updatedProject = {
-        ...project,
-        tasks: updatedTasks,
-      }
+      // Update positions for the remaining tasks
+      const updatedTasksInSameStatus = tasksInSameStatus.map((t, index) => ({
+        ...t,
+        position: index,
+      }))
+
+      // Combine with tasks from other columns
+      const updatedTasks = [...project.tasks.filter((t) => t.status !== task.status), ...updatedTasksInSameStatus]
 
       // Update the project
-      updateProject(updatedProject)
+      updateProject({
+        ...project,
+        tasks: updatedTasks,
+      })
 
       toast({
         title: "Task deleted",
