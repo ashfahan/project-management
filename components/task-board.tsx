@@ -316,9 +316,11 @@ export default function TaskBoard({ project }: TaskBoardProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">{project.name} Tasks</h2>
-        <Button onClick={handleAddTask}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-4">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-xl sm:text-2xl font-bold truncate">{project.name} Tasks</h2>
+        </div>
+        <Button onClick={handleAddTask} className="w-full sm:w-auto h-9">
           <PlusCircle className="mr-2 h-4 w-4" />
           Add Task
         </Button>
@@ -331,30 +333,32 @@ export default function TaskBoard({ project }: TaskBoardProps) {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 kanban-board">
-          {COLUMNS.map((column) => {
-            const tasksInColumn = getTasksByStatus(column.id)
-            const isActiveColumn = activeColumn === column.id
-            const isOverThisColumn = overColumn === column.id
+        <div className="kanban-board-container">
+          <div className="kanban-board">
+            {COLUMNS.map((column) => {
+              const tasksInColumn = getTasksByStatus(column.id)
+              const isActiveColumn = activeColumn === column.id
+              const isOverThisColumn = overColumn === column.id
 
-            return (
-              <div key={column.id} className="space-y-2 kanban-column">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium">{column.title}</h3>
-                  <span className="text-sm text-muted-foreground">{tasksInColumn.length}</span>
+              return (
+                <div key={column.id} className="kanban-column-wrapper">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium text-sm sm:text-base">{column.title}</h3>
+                    <span className="text-xs sm:text-sm text-muted-foreground">{tasksInColumn.length}</span>
+                  </div>
+                  <TaskColumn
+                    id={column.id}
+                    tasks={tasksInColumn}
+                    isActiveColumn={isActiveColumn}
+                    isOver={isOverThisColumn}
+                    dropPosition={isOverThisColumn ? dropPosition : null}
+                    activeTaskColumn={activeColumn}
+                    onTaskClick={handleEditTask}
+                  />
                 </div>
-                <TaskColumn
-                  id={column.id}
-                  tasks={tasksInColumn}
-                  isActiveColumn={isActiveColumn}
-                  isOver={isOverThisColumn}
-                  dropPosition={isOverThisColumn ? dropPosition : null}
-                  activeTaskColumn={activeColumn}
-                  onTaskClick={handleEditTask}
-                />
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
 
         {typeof document !== "undefined" &&

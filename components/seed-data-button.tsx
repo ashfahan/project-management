@@ -18,9 +18,9 @@ export function SeedDataButton() {
   }
 
   return (
-    <Button variant="outline" onClick={handleGenerateSeedData} disabled={isGenerating}>
+    <Button variant="outline" onClick={handleGenerateSeedData} disabled={isGenerating} className="h-9">
       {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
-      {isGenerating ? "Generating..." : "Generate Test Data"}
+      {isGenerating ? "Generating..." : "Test Data"}
     </Button>
   )
 }

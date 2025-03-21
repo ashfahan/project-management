@@ -27,27 +27,33 @@ export default function ProjectCard({ project, onClick, isActive }: ProjectCardP
       className={`cursor-pointer transition-all hover:shadow-md ${isActive ? "ring-2 ring-primary" : ""}`}
       onClick={onClick}
     >
-      <CardHeader>
+      <CardHeader className="p-4 sm:p-6">
         <div className="flex justify-between items-start">
-          <CardTitle>{project.name}</CardTitle>
-          <Badge variant={getStatusVariant(project.status)}>{project.status}</Badge>
+          <CardTitle className="text-base sm:text-lg">{project.name}</CardTitle>
+          <Badge variant={getStatusVariant(project.status)} className="text-xs">
+            {project.status}
+          </Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground line-clamp-2">{project.description}</p>
+      <CardContent className="space-y-3 p-4 sm:p-6 pt-0 sm:pt-0">
+        <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">{project.description}</p>
 
         <div className="space-y-2">
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between text-xs sm:text-sm">
             <span>Progress</span>
             <span>
               {completedTasks} of {totalTasks} tasks
             </span>
           </div>
-          <Progress value={progress} className="h-2" aria-label={`Project progress: ${Math.round(progress)}%`} />
+          <Progress
+            value={progress}
+            className="h-1.5 sm:h-2"
+            aria-label={`Project progress: ${Math.round(progress)}%`}
+          />
         </div>
 
         {nextDeadline && (
-          <div className="text-sm">
+          <div className="text-xs sm:text-sm">
             <span className="text-muted-foreground">Next deadline: </span>
             <span className={`font-medium ${isDeadlineSoon(nextDeadline) ? "text-destructive" : ""}`}>
               {formatRelativeTime(nextDeadline)}
@@ -55,16 +61,16 @@ export default function ProjectCard({ project, onClick, isActive }: ProjectCardP
           </div>
         )}
       </CardContent>
-      <CardFooter>
+      <CardFooter className="p-4 sm:p-6 pt-0 sm:pt-0">
         <div className="flex -space-x-2" aria-label={`${project.teamMembers.length} team members assigned`}>
           {project.teamMembers.slice(0, 3).map((member, index) => (
-            <Avatar key={index} className="border-2 border-background h-8 w-8">
+            <Avatar key={index} className="border-2 border-background h-6 w-6 sm:h-8 sm:w-8">
               <AvatarImage src={member.avatar} alt={`Team member ${member.name}`} />
-              <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+              <AvatarFallback className="text-xs sm:text-sm">{getInitials(member.name)}</AvatarFallback>
             </Avatar>
           ))}
           {project.teamMembers.length > 3 && (
-            <div className="flex items-center justify-center h-8 w-8 rounded-full bg-muted text-xs font-medium">
+            <div className="flex items-center justify-center h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-muted text-xs font-medium">
               +{project.teamMembers.length - 3}
               <span className="sr-only">additional team members</span>
             </div>
