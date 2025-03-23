@@ -60,6 +60,12 @@ export default function TaskCard({ task, onClick, isDragging = false }: TaskCard
     onClick()
   }
 
+  const cardClassName = `cursor-grab hover:shadow-md transition-all min-h-[140px] sm:min-h-[160px] ${
+    isCurrentlyDragging
+      ? "shadow-lg border-2 border-primary cursor-grabbing"
+      : "border border-border hover:border-primary/30"
+  }`
+
   return (
     <div
       ref={setNodeRef}
@@ -72,11 +78,7 @@ export default function TaskCard({ task, onClick, isDragging = false }: TaskCard
       {...listeners}
     >
       <Card
-        className={`cursor-grab hover:shadow-md transition-all min-h-[140px] sm:min-h-[160px] ${
-          isCurrentlyDragging
-            ? "shadow-lg border-2 border-primary cursor-grabbing"
-            : "border border-border hover:border-primary/30"
-        }`}
+        className={cardClassName}
         onClick={handleClick}
         tabIndex={0}
         onKeyDown={(e) => {

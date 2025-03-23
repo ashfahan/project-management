@@ -206,7 +206,6 @@ export default function TaskDialog({ open, onOpenChange, project, task }: TaskDi
     try {
       // Store a deep copy of the task and project for potential undo
       const taskToDelete = JSON.parse(JSON.stringify(task)) as Task
-      const originalTasks = JSON.parse(JSON.stringify(project.tasks)) as Task[]
       const originalProject = JSON.parse(JSON.stringify(project)) as Project
 
       // Get all tasks in the same status column (excluding the task to delete)
@@ -247,13 +246,12 @@ export default function TaskDialog({ open, onOpenChange, project, task }: TaskDi
         description: "The task has been deleted.",
         action: {
           label: "Undo",
-          onClick: () => {
+          onClick: (id) => {
             // Restore the original project state
             updateProject(originalProject)
 
-            toast.success("Task restored", {
-              description: "The task has been restored successfully.",
-            })
+            // Dismiss the original toast
+            toast.dismiss(id)
           },
         },
       })

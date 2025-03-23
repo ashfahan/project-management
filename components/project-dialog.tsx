@@ -136,13 +136,12 @@ export default function ProjectDialog({ open, onOpenChange, project = null }: Pr
         description: "The project has been deleted.",
         action: {
           label: "Undo",
-          onClick: () => {
+          onClick: (id) => {
             // Restore the project
             addProject(projectToDelete)
 
-            toast.success("Project restored", {
-              description: "The project has been restored successfully.",
-            })
+            // Dismiss the original toast
+            toast.dismiss(id)
           },
         },
       })

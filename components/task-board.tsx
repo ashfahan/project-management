@@ -25,6 +25,21 @@ import { TaskColumn } from "./task-column"
 import { createPortal } from "react-dom"
 import { toast } from "sonner"
 
+// Helper function to sort tasks by position
+const sortTasksByPosition = (tasks: Task[]): Task[] => {
+  return [...tasks].sort((a, b) => {
+    if (a.position !== undefined && b.position !== undefined) {
+      return a.position - b.position
+    }
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  })
+}
+
+// Helper function to get tasks by status
+const getTasksByStatus = (tasks: Task[], status: string): Task[] => {
+  return sortTasksByPosition(tasks.filter((task) => task.status === status))
+}
+
 interface TaskBoardProps {
   project: Project
 }
@@ -49,21 +64,6 @@ export default function TaskBoard({ project }: TaskBoardProps) {
     }),
   )
 
-  // Get tasks by status with memoization
-  const getTasksByStatus = useCallback(
-    (status: string) => {
-      return project.tasks
-        .filter((task) => task.status === status)
-        .sort((a, b) => {
-          if (a.position !== undefined && b.position !== undefined) {
-            return a.position - b.position
-          }
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        })
-    },
-    [project.tasks],
-  )
-
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event
     const taskId = active.id as string
@@ -79,8 +79,7 @@ export default function TaskBoard({ project }: TaskBoardProps) {
 
   const findDropPosition = useCallback(
     (event: DragOverEvent, columnId: string) => {
-      // If over empty space in the column or at the end
-      const tasksInColumn = getTasksByStatus(columnId)
+      const tasksInColumn = getTasksByStatus(project.tasks, columnId)
 
       if (tasksInColumn.length === 0) {
         return 0 // First position if column is empty
@@ -112,7 +111,7 @@ export default function TaskBoard({ project }: TaskBoardProps) {
 
       return tasksInColumn.length
     },
-    [getTasksByStatus],
+    [project.tasks],
   )
 
   const handleDragOver = useCallback(
@@ -133,7 +132,7 @@ export default function TaskBoard({ project }: TaskBoardProps) {
         setOverColumn(overId)
 
         // For empty columns, always set position to 0
-        const tasksInColumn = getTasksByStatus(overId)
+        const tasksInColumn = getTasksByStatus(project.tasks, overId)
         if (tasksInColumn.length === 0) {
           setDropPosition(0)
         } else {
@@ -147,7 +146,7 @@ export default function TaskBoard({ project }: TaskBoardProps) {
           setOverColumn(overTask.status)
 
           // Get all tasks in this column
-          const tasksInColumn = getTasksByStatus(overTask.status)
+          const tasksInColumn = getTasksByStatus(project.tasks, overTask.status)
 
           // Find the index of the task we're over
           const overTaskIndex = tasksInColumn.findIndex((t) => t.id === overId)
@@ -180,7 +179,7 @@ export default function TaskBoard({ project }: TaskBoardProps) {
         }
       }
     },
-    [project.tasks, findDropPosition, getTasksByStatus, activeColumn],
+    [project.tasks, findDropPosition, activeColumn],
   )
 
   const handleDragEnd = useCallback(
@@ -231,9 +230,7 @@ export default function TaskBoard({ project }: TaskBoardProps) {
         updatedTasks = updatedTasks.filter((t) => t.id !== activeTaskId)
 
         // Get tasks in destination column
-        const tasksInDestination = updatedTasks
-          .filter((t) => t.status === targetColumnId)
-          .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+        const tasksInDestination = sortTasksByPosition(updatedTasks.filter((t) => t.status === targetColumnId))
 
         // Determine insertion position
         let insertPosition = currentDropPosition ?? tasksInDestination.length
@@ -257,9 +254,7 @@ export default function TaskBoard({ project }: TaskBoardProps) {
         }
 
         // Update positions for tasks in source column
-        const tasksInSource = updatedTasks
-          .filter((t) => t.status === draggedTask.status)
-          .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+        const tasksInSource = sortTasksByPosition(updatedTasks.filter((t) => t.status === draggedTask.status))
 
         tasksInSource.forEach((task, index) => {
           task.position = index
@@ -276,7 +271,7 @@ export default function TaskBoard({ project }: TaskBoardProps) {
       }
       // Case 2: Reordering within the same column
       else {
-        const tasksInColumn = getTasksByStatus(targetColumnId)
+        const tasksInColumn = getTasksByStatus(project.tasks, targetColumnId)
         const draggedIndex = tasksInColumn.findIndex((t) => t.id === activeTaskId)
 
         let insertPosition = currentDropPosition ?? draggedIndex
@@ -310,18 +305,16 @@ export default function TaskBoard({ project }: TaskBoardProps) {
         description: "The task has been moved successfully.",
         action: {
           label: "Undo",
-          onClick: () => {
+          onClick: (id) => {
             // Restore the original project state
             updateProject(originalProject)
-
-            toast.success("Move undone", {
-              description: "The task has been returned to its original position.",
-            })
+            // Dismiss the original toast
+            toast.dismiss(id)
           },
         },
       })
     },
-    [project, overColumn, dropPosition, getTasksByStatus, updateProject],
+    [project, overColumn, dropPosition, updateProject],
   )
 
   const handleAddTask = () => {
@@ -358,7 +351,7 @@ export default function TaskBoard({ project }: TaskBoardProps) {
         <div className="w-full overflow-x-auto pb-4 -mx-2 px-2 sm:mx-0 sm:px-0 touch-pan-x">
           <div className="flex flex-row min-w-max gap-4">
             {COLUMNS.map((column) => {
-              const tasksInColumn = getTasksByStatus(column.id)
+              const tasksInColumn = getTasksByStatus(project.tasks, column.id)
               const isActiveColumn = activeColumn === column.id
               const isOverThisColumn = overColumn === column.id
 

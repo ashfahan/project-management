@@ -6,6 +6,15 @@ import { CSS } from "@dnd-kit/utilities"
 import type { Task } from "@/types/project"
 import TaskCard from "./task-card"
 
+// Placeholder component to reduce duplication
+const DropPlaceholder = () => (
+  <div className="min-h-[70px] sm:min-h-[80px] mb-3 rounded-lg animate-pulse relative z-10">
+    <div className="bg-primary/15 border-2 border-dashed border-primary/50 rounded-lg h-full w-full flex items-center justify-center text-primary font-medium shadow-md p-4 text-sm sm:text-base">
+      <span>Drop here</span>
+    </div>
+  </div>
+)
+
 interface TaskColumnProps {
   id: string
   tasks: Task[]
@@ -37,8 +46,6 @@ export function TaskColumn({
 
   // Only show placeholder when dragging from a different column
   const isDraggingFromDifferentColumn = isOver && activeTaskColumn !== null && activeTaskColumn !== id
-
-  // Only show placeholders when dragging from a different column
   const showPlaceholder = isDraggingFromDifferentColumn && dropPosition !== null
 
   // Create a new array with placeholders inserted at the drop position
@@ -65,13 +72,15 @@ export function TaskColumn({
     } as Task & { isPlaceholder: boolean })
   }
 
+  const columnClassName = `transition-colors duration-200 cursor-default ${
+    isOver ? "bg-accent/50 ring-2 ring-primary/20" : ""
+  } ${isActiveColumn ? "ring-2 ring-primary/20" : ""}`
+
   return (
     <Card
       ref={setNodeRef}
       style={style}
-      className={`transition-colors duration-200 cursor-default ${
-        isOver ? "bg-accent/50 ring-2 ring-primary/20" : ""
-      } ${isActiveColumn ? "ring-2 ring-primary/20" : ""}`}
+      className={columnClassName}
       data-column-id={id}
       data-is-over={isOver ? "true" : "false"}
       {...attributes}
@@ -79,16 +88,9 @@ export function TaskColumn({
     >
       <CardContent className="p-2 flex flex-col gap-3 overflow-y-auto h-[500px] sm:h-[650px]">
         <SortableContext items={tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
-          {tasksWithPlaceholder.map((task, index) =>
+          {tasksWithPlaceholder.map((task) =>
             "isPlaceholder" in task ? (
-              <div
-                key="placeholder"
-                className="min-h-[70px] sm:min-h-[80px] mb-3 rounded-lg animate-pulse relative z-10"
-              >
-                <div className="bg-primary/15 border-2 border-dashed border-primary/50 rounded-lg h-full w-full flex items-center justify-center text-primary font-medium shadow-md p-4 text-sm sm:text-base">
-                  <span>Drop here</span>
-                </div>
-              </div>
+              <DropPlaceholder key="placeholder" />
             ) : (
               <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task)} />
             ),

@@ -10,6 +10,9 @@ import { getInitials } from "@/utils/string-utils"
 import { isDeadlineSoon, formatRelativeTime } from "@/utils/date-utils"
 import { calculateProjectProgress, getNextDeadline } from "@/utils/task-utils"
 
+// Maximum number of team members to display avatars for
+const MAX_VISIBLE_MEMBERS = 3
+
 interface ProjectCardProps {
   project: Project
   onClick: () => void
@@ -22,11 +25,11 @@ export default function ProjectCard({ project, onClick, isActive }: ProjectCardP
   const progress = calculateProjectProgress(project)
   const nextDeadline = getNextDeadline(project.tasks)
 
+  const cardClassName = `cursor-pointer transition-all hover:shadow-md ${isActive ? "ring-2 ring-primary" : ""}`
+  const deadlineClassName = nextDeadline && isDeadlineSoon(nextDeadline) ? "text-destructive" : ""
+
   return (
-    <Card
-      className={`cursor-pointer transition-all hover:shadow-md ${isActive ? "ring-2 ring-primary" : ""}`}
-      onClick={onClick}
-    >
+    <Card className={cardClassName} onClick={onClick}>
       <CardHeader className="p-4 sm:p-6">
         <div className="flex justify-between items-start">
           <CardTitle className="text-base sm:text-lg">{project.name}</CardTitle>
@@ -55,23 +58,21 @@ export default function ProjectCard({ project, onClick, isActive }: ProjectCardP
         {nextDeadline && (
           <div className="text-xs sm:text-sm">
             <span className="text-muted-foreground">Next deadline: </span>
-            <span className={`font-medium ${isDeadlineSoon(nextDeadline) ? "text-destructive" : ""}`}>
-              {formatRelativeTime(nextDeadline)}
-            </span>
+            <span className={`font-medium ${deadlineClassName}`}>{formatRelativeTime(nextDeadline)}</span>
           </div>
         )}
       </CardContent>
       <CardFooter className="p-4 sm:p-6 pt-0 sm:pt-0">
         <div className="flex -space-x-2" aria-label={`${project.teamMembers.length} team members assigned`}>
-          {project.teamMembers.slice(0, 3).map((member, index) => (
+          {project.teamMembers.slice(0, MAX_VISIBLE_MEMBERS).map((member, index) => (
             <Avatar key={index} className="border-2 border-background h-6 w-6 sm:h-8 sm:w-8">
               <AvatarImage src={member.avatar} alt={`Team member ${member.name}`} />
               <AvatarFallback className="text-xs sm:text-sm">{getInitials(member.name)}</AvatarFallback>
             </Avatar>
           ))}
-          {project.teamMembers.length > 3 && (
+          {project.teamMembers.length > MAX_VISIBLE_MEMBERS && (
             <div className="flex items-center justify-center h-6 w-6 sm:h-8 sm:w-8 rounded-full bg-muted text-xs font-medium">
-              +{project.teamMembers.length - 3}
+              +{project.teamMembers.length - MAX_VISIBLE_MEMBERS}
               <span className="sr-only">additional team members</span>
             </div>
           )}
