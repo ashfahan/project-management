@@ -1,5 +1,5 @@
 import type React from "react"
-import "@/app/globals.css"
+import "@/styles/app.css"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ProjectsProvider } from "@/hooks/use-projects"
@@ -8,11 +8,7 @@ import { SonnerToastProvider } from "@/components/sonner-toast-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -30,11 +26,3 @@ export default function RootLayout({
     </html>
   )
 }
-
-
-
-import './globals.css'
-
-export const metadata = {
-      generator: 'v0.dev'
-    };
